@@ -1,10 +1,10 @@
-use std::{sync::Arc, thread::sleep, time::Duration};
+use std::{thread::sleep, time::Duration};
 
 use colored::Colorize;
 use futures::future::join_all;
 use log::{error, info};
 use serde::{Deserialize, Serialize};
-use tokio::{sync::RwLock, task::JoinHandle};
+use tokio::task::JoinHandle;
 use tokio_cron_scheduler::JobScheduler;
 
 use crate::{
