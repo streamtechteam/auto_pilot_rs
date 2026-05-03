@@ -1,4 +1,3 @@
-use log::error;
 
 use crate::error::AutoPilotError;
 
