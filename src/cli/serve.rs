@@ -1,11 +1,15 @@
-use std::sync::{Arc, atomic::AtomicBool};
+use std::{
+    sync::{Arc, atomic::AtomicBool},
+    thread::sleep,
+    time::Duration,
+};
 
 use crate::{
     api::{routes::start_api, state::AppState},
     autopilot::AutoPilot,
     status::set::set_status_initial,
 };
-use log::{error, warn};
+use log::{error, info, warn};
 use tokio::{self, signal, sync::RwLock};
 
 pub async fn serve(verbose: bool, api: bool) {

@@ -1,4 +1,5 @@
 use colored::Colorize;
+use futures::future::join_all;
 use log::{error, info, warn};
 use tokio::task::JoinHandle;
 use tokio_cron_scheduler::JobScheduler;
@@ -51,7 +52,7 @@ impl AutoPilot {
 
         info!("{}", "Autopilot reloaded successfully!".green())
     }
-    pub fn start(&mut self, _verbose: bool) {
+    pub fn start(&mut self, verbose: bool) {
         // Self::prepare_logging(verbose);
         if Self::check_instance() {
             return;
