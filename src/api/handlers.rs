@@ -1,15 +1,16 @@
 use std::{collections::HashMap, sync::atomic::Ordering};
 
 use axum::{
-    Json,
+    Json, Router,
     extract::{Path, State},
     http::StatusCode,
+    routing::{get, post},
 };
-use log::info;
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 
 use crate::{api::state::AppState, job::get::get_jobs};
-use crate::job::JobScheme;
+use crate::{job::JobScheme, status::JobStatusEnum};
 use crate::{
     job::set::{add_job, remove_job},
     status::get::get_status_log,
@@ -40,7 +41,7 @@ pub async fn jobs_status(State(state): State<AppState>) -> Json<JobsStatus> {
 
 pub async fn jobs_start(
     State(state): State<AppState>,
-    Json(_payload): Json<Option<StartConfig>>,
+    Json(payload): Json<Option<StartConfig>>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     // Prevent double-start
     if state.started.swap(true, Ordering::Relaxed) {
@@ -146,7 +147,7 @@ impl From<&crate::status::JobStatusStruct> for JobResponse {
 pub async fn jobs_list(
     State(state): State<AppState>,
 ) -> Result<Json<Vec<JobResponse>>, StatusCode> {
-    let _ap = state.auto_pilot.read().await;
+    let ap = state.auto_pilot.read().await;
 
     // ۱. تبدیل live_jobs به HashMap با کلیدِ id
     // این‌ها اولویت بالاتری دارن (نسخه‌های زنده)
@@ -241,7 +242,7 @@ pub async fn jobs_delete(Path(id): Path<String>) -> Result<Json<serde_json::Valu
 
 /// PUT /jobs/{id} - Update job by ID
 pub async fn jobs_update(
-    State(_state): State<AppState>,
+    State(state): State<AppState>,
     Path(id): Path<String>,
     Json(payload): Json<JobScheme>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {

@@ -7,7 +7,7 @@ use crate::{
     error::AutoPilotError,
     fs::get_autopilot_path,
     job::set::remove_job,
-    status::get::get_status_log,
+    status::{get::get_status_log, set::set_status_initial},
 };
 
 pub fn list() {

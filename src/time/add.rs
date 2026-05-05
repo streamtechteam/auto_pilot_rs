@@ -5,6 +5,7 @@ use tokio_cron_scheduler::JobScheduler;
 use crate::{
     error::AutoPilotError,
     job::Job,
+    status::JobStatusEnum,
     time::{When, to_cron_expression},
 };
 
