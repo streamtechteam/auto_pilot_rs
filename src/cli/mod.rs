@@ -1,7 +1,10 @@
 use clap::{Parser, Subcommand, crate_version};
 
 use crate::{
-    cli::{create::create, list::list, remove::remove, serve::serve, status::status, stop::stop},
+    cli::{
+        create::create, gui::gui, list::list, remove::remove, serve::serve, status::status,
+        stop::stop,
+    },
     fs::{set_all_paths, set_autopilot_path},
 };
 
@@ -46,6 +49,8 @@ enum Commands {
     List,
     /// Status of AutoPilot-rs
     Status,
+    /// Run GUI
+    Gui,
 }
 
 pub async fn handle_cli() {
@@ -71,7 +76,16 @@ pub async fn handle_cli() {
         Some(Commands::Status) => {
             status();
         }
-        None => {}
+        Some(Commands::Gui) => {
+            gui();
+        }
+        
+        None => {
+            println!("No commands specified.");
+            let mut cmd = <Cli as clap::CommandFactory>::command();
+            cmd.print_help().unwrap();
+            return;
+        }
     }
 }
 
