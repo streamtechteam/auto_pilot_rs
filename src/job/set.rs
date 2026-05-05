@@ -1,7 +1,5 @@
 use std::{collections::HashMap, path::PathBuf};
 
-use serde_json::de;
-
 use crate::{
     conditions::ConditionScheme,
     error::AutoPilotError,
@@ -43,7 +41,7 @@ pub fn add_job(
             format!(
                 "{}_{}",
                 id,
-                name.expect("there is something wrong with world if you are seeing this")
+                name.expect("there is something wrong with the world if you are seeing this")
             )
         } else {
             id

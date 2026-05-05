@@ -29,7 +29,12 @@ pub async fn serve(verbose: bool, api: bool) {
         auto_pilot: auto_pilot.clone(),
         started: Arc::new(AtomicBool::new(!api)),
     };
-    start_api(state).await;
+    match start_api(state).await {
+        Ok(_) => {}
+        Err(err) => {
+            error!("Failed to start api : {}", err)
+        }
+    }
     // Keep the daemon running until Ctrl+C is pressed
     // Handle SIGTERM signal
     #[cfg(unix)]

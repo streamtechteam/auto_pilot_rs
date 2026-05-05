@@ -1,5 +1,4 @@
 use colored::Colorize;
-use futures::future::join_all;
 use log::{error, info, warn};
 use tokio::task::JoinHandle;
 use tokio_cron_scheduler::JobScheduler;
@@ -74,6 +73,10 @@ impl AutoPilot {
         Ok(())
     }
     pub fn run_jobs(&mut self) -> Vec<JoinHandle<()>> {
+        self.jobs.iter_mut().for_each(|job| {
+            job.loaded = true;
+        });
+
         let mut handles = vec![];
         for mut job in self.jobs.clone() {
             let scheduler = self.scheduler.clone();

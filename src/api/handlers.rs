@@ -9,18 +9,15 @@ use axum::{
 use log::{error, info};
 use serde::{Deserialize, Serialize};
 
-use crate::{api::state::AppState, job::get::get_jobs};
+use crate::{
+    api::state::{AppState, ReloadResponse, StatusResponse},
+    job::get::get_jobs,
+};
 use crate::{job::JobScheme, status::JobStatusEnum};
 use crate::{
     job::set::{add_job, remove_job},
     status::get::get_status_log,
 };
-
-#[derive(Serialize)]
-pub struct JobsStatus {
-    running: bool,
-    job_count: usize,
-}
 
 #[derive(Deserialize)]
 pub struct StartConfig {
@@ -31,9 +28,9 @@ pub async fn health() -> Json<serde_json::Value> {
     Json(serde_json::json!({ "status": "ok", "service": "autopilot-api" }))
 }
 
-pub async fn jobs_status(State(state): State<AppState>) -> Json<JobsStatus> {
+pub async fn jobs_status(State(state): State<AppState>) -> Json<StatusResponse> {
     let ap = state.auto_pilot.read().await;
-    Json(JobsStatus {
+    Json(StatusResponse {
         running: state.started.load(Ordering::Relaxed),
         job_count: ap.jobs.len(),
     })
@@ -78,15 +75,18 @@ pub async fn jobs_stop(
 
 pub async fn jobs_reload(
     State(state): State<AppState>,
-) -> Result<Json<serde_json::Value>, StatusCode> {
+) -> Result<Json<ReloadResponse>, StatusCode> {
     let mut ap = state.auto_pilot.write().await;
+    // for _ in 1..1000 {
     ap.reload().await;
+    // }
     // reload_config already calls run_jobs(), so ensure flag is set
     state.started.store(true, Ordering::Relaxed);
-
-    Ok(Json(
-        serde_json::json!({ "success": true, "message": "Config reloaded" }),
-    ))
+    // serde_json::json!({ "success": true, "message": "Config reloaded" }
+    Ok(Json(ReloadResponse {
+        message: "Config reloaded.".to_string(),
+        success: true,
+    }))
 }
 
 // ============ Job CRUD Handlers ============
@@ -96,6 +96,7 @@ pub struct JobResponse {
     id: String,
     name: String,
     description: String,
+    loaded: bool,
     status: String,
 }
 
@@ -103,6 +104,7 @@ impl From<&crate::job::Job> for JobResponse {
     fn from(job: &crate::job::Job) -> Self {
         JobResponse {
             id: job.id.clone(),
+            loaded: job.loaded,
             name: job.name.clone(),
             description: job.description.clone(),
             status: format!("{:?}", job.status),
@@ -114,6 +116,7 @@ impl From<&crate::status::JobStatusStruct> for JobResponse {
         JobResponse {
             id: job.id.clone(),
             name: job.name.clone(),
+            loaded: true,
             //TODO
             description: job.name.clone(),
             status: format!("{:?}", job.status),

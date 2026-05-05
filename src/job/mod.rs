@@ -28,6 +28,7 @@ pub struct Job {
     pub check_interval: Option<String>,
     pub conditions: Vec<Box<dyn Condition>>,
     pub tasks: Vec<task::Task>,
+    pub loaded: bool,
 }
 
 impl Job {
@@ -49,6 +50,7 @@ impl Job {
             check_interval,
             conditions,
             tasks,
+            loaded: false,
         }
     }
 
@@ -75,6 +77,7 @@ impl Job {
             check_interval: scheme.check_interval,
             conditions,
             tasks,
+            loaded: false,
         }
     }
 
@@ -127,7 +130,11 @@ impl Job {
                             1000
                         }
                     };
-                    sleep(Duration::from_millis(interval_ms));
+                    // sleep(Duration::from_millis(interval_ms));
+                    tokio::time::sleep(Duration::from_millis(interval_ms)).await;
+                    // loop {
+                    //     print!("FUCK");
+                    // }
                     continue;
                 }
                 self.status = JobStatusEnum::Unsatisfied;

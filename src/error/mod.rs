@@ -49,6 +49,9 @@ pub enum AutoPilotError {
 
     #[error("Autopilot error: {0}")]
     Autopilot(String),
+
+    #[error("Api Error: {0}")]
+    Api(String),
 }
 
 // Type alias for convenience

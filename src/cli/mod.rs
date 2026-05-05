@@ -1,4 +1,4 @@
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, crate_version};
 
 use crate::{
     cli::{create::create, list::list, remove::remove, serve::serve, status::status, stop::stop},
@@ -6,6 +6,7 @@ use crate::{
 };
 
 pub mod create;
+pub mod gui;
 pub mod list;
 pub mod remove;
 pub mod serve;
@@ -14,7 +15,7 @@ pub mod stop;
 
 #[derive(Parser)]
 #[command(name = "AutoPilot-rs")]
-#[command(about = "a cross platform automation tool", version = "1.0")]
+#[command(about = "A cross platform automation tool", version = crate_version!())]
 struct Cli {
     #[arg(long)]
     config_path: Option<String>,

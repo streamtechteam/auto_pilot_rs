@@ -8,14 +8,14 @@ use crate::autopilot::AutoPilot;
 // Simple response types
 #[derive(Serialize)]
 pub struct StatusResponse {
-    running: bool,
-    job_count: usize,
+    pub running: bool,
+    pub job_count: usize,
 }
 
 #[derive(Serialize)]
 pub struct ReloadResponse {
-    success: bool,
-    message: String,
+    pub success: bool,
+    pub message: String,
 }
 
 // Shared application state

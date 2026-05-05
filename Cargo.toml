@@ -1,6 +1,6 @@
 [package]
 name = "autopilot-rs"
-version = "0.1.0"
+version = "0.1.0-beta"
 edition = "2024"
 description = "A cross-platform automation tool that runs tasks when conditions are met"
 license = "MIT"
@@ -9,7 +9,7 @@ repository = "https://github.com/streamtechteam/auto_pilot_rs"
 
 [dependencies]
 chrono = { version = "0.4.42", features = ["serde"] }
-clap = { version = "4.5.56", features = ["derive"] }
+clap = { version = "4.5.56", features = ["cargo", "derive"] }
 colored = "3.0.0"
 duct = "1.1.1"
 flexi_logger = "0.31.7"
@@ -29,6 +29,9 @@ rayon = "1.11.0"
 ratatui = "0.30.0"
 crossterm = "0.29.0"
 axum = "0.8.8"
+egui = "0.33.3"
+eframe = "0.33.3"
+egui_extras = "0.33.3"
 
 # [target.'cfg(target_os = "linux")'.dependencies]
 # systemd = "0.10.1"
