@@ -10,29 +10,29 @@ license=('MIT')
 provides=("$_pkgname")
 conflicts=("$_pkgname")
 depends=('systemd-libs' 'libxcb' 'libxrandr' 'libx11' 'libxau')
-makedepends=('rust' 'cargo' 'libxcb' 'libxrandr' 'libxau' 'libx11' 'git')
+makedepends=('rust' 'cargo' 'git')
+options=(!lto)
 source=("git+$url")
 sha256sums=("SKIP")
 
 pkgver() {
-    cd "$_pkgname"
-
-    # This generates a version like "r10.abc1234"
-    # r10 = 10 commits since last tag
-    # abc1234 = the short commit hash
+    cd "$srcdir/$_pkgname"
     printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
 }
 
+prepare() {
+    cd "$srcdir/$_pkgname"
+    export RUSTUP_TOOLCHAIN=stable
+    cargo fetch --locked --target "$CARCH-unknown-linux-gnu"
+}
+
 build() {
-  # Build from the directory where PKGBUILD is located
-  cd "$startdir/src/$_pkgname"
-  cargo build --release --locked
+    cd "$srcdir/$_pkgname"
+    export RUSTUP_TOOLCHAIN=stable
+    cargo build --release --locked
 }
 
 package() {
-  # Reference the binary using the absolute start directory
-  install -Dm755 "$startdir/src/$_pkgname/target/release/$_pkgname" "$pkgdir/usr/bin/$_pkgname"
-
-  # If you have a license file, it's good practice to include it:
-  install -Dm644 "$startdir/src/$_pkgname/LICENSE" "$pkgdir/usr/share/licenses/$_pkgname/LICENSE"
+    install -Dm755 "$srcdir/$_pkgname/target/release/$_pkgname" "$pkgdir/usr/bin/$_pkgname"
+    install -Dm644 "$srcdir/$_pkgname/LICENSE" "$pkgdir/usr/share/licenses/$_pkgname/LICENSE"
 }
