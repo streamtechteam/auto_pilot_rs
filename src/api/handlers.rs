@@ -6,7 +6,7 @@ use axum::{
     http::StatusCode,
     routing::{get, post},
 };
-use log::{error, info};
+use log::{error, info, warn};
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -16,16 +16,34 @@ use crate::{
 use crate::{job::JobScheme, status::JobStatusEnum};
 use crate::{
     job::set::{add_job, remove_job},
-    status::get::get_status_log,
+    status::StateManager,
 };
 
 #[derive(Deserialize)]
 pub struct StartConfig {
     verbose: Option<bool>,
 }
+#[derive(Serialize, Deserialize)]
+pub struct HealthResponse {
+    pub status: String,
+    pub service: String,
+}
 
-pub async fn health() -> Json<serde_json::Value> {
-    Json(serde_json::json!({ "status": "ok", "service": "autopilot-api" }))
+#[derive(Serialize)]
+pub struct JobResponse {
+    id: String,
+    name: String,
+    description: String,
+    loaded: bool,
+    status: String,
+}
+
+pub static API_SERVICE_NAME: &str = "autopilot-api";
+pub async fn health() -> Json<HealthResponse> {
+    Json(HealthResponse {
+        status: "ok".to_string(),
+        service: API_SERVICE_NAME.to_string(),
+    })
 }
 
 pub async fn jobs_status(State(state): State<AppState>) -> Json<StatusResponse> {
@@ -38,7 +56,7 @@ pub async fn jobs_status(State(state): State<AppState>) -> Json<StatusResponse> 
 
 pub async fn jobs_start(
     State(state): State<AppState>,
-    Json(payload): Json<Option<StartConfig>>,
+    // Json(payload): Json<Option<StartConfig>>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     // Prevent double-start
     if state.started.swap(true, Ordering::Relaxed) {
@@ -73,16 +91,32 @@ pub async fn jobs_stop(
     ))
 }
 
+pub async fn shutdown(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let mut ap = state.auto_pilot.write().await;
+    if !state.started.swap(false, Ordering::Relaxed) {
+        ap.shutdown()
+            .await
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    }
+
+    warn!("Autopilot shutted down via API");
+    std::process::exit(0);
+    // Ok(Json(
+    //     serde_json::json!({ "success": true, "message": "Autopilot shutted down" }),
+    // ))
+}
+
 pub async fn jobs_reload(
     State(state): State<AppState>,
 ) -> Result<Json<ReloadResponse>, StatusCode> {
     let mut ap = state.auto_pilot.write().await;
-    // for _ in 1..1000 {
+
     ap.reload().await;
-    // }
+
     // reload_config already calls run_jobs(), so ensure flag is set
     state.started.store(true, Ordering::Relaxed);
-    // serde_json::json!({ "success": true, "message": "Config reloaded" }
     Ok(Json(ReloadResponse {
         message: "Config reloaded.".to_string(),
         success: true,
@@ -91,26 +125,29 @@ pub async fn jobs_reload(
 
 // ============ Job CRUD Handlers ============
 
-#[derive(Serialize)]
-pub struct JobResponse {
-    id: String,
-    name: String,
-    description: String,
-    loaded: bool,
-    status: String,
-}
-
-impl From<&crate::job::Job> for JobResponse {
-    fn from(job: &crate::job::Job) -> Self {
+impl JobResponse {
+    async fn from_job_and_sm(job: &crate::job::Job, sm: StateManager) -> Self {
         JobResponse {
             id: job.id.clone(),
             loaded: job.loaded,
             name: job.name.clone(),
             description: job.description.clone(),
-            status: format!("{:?}", job.status),
+            status: format!("{:?}", sm.get_state_by_id(job.id.clone()).await),
         }
     }
 }
+
+// impl From<&crate::job::Job> for JobResponse {
+//     fn from(job: &crate::job::Job, sm: StateManager) -> Self {
+//         JobResponse {
+//             id: job.id.clone(),
+//             loaded: job.loaded,
+//             name: job.name.clone(),
+//             description: job.description.clone(),
+//             status: format!("{:?}", job.status),
+//         }
+//     }
+// }
 impl From<&crate::status::JobStatusStruct> for JobResponse {
     fn from(job: &crate::status::JobStatusStruct) -> Self {
         JobResponse {
@@ -154,7 +191,10 @@ pub async fn jobs_list(
 
     // ۱. تبدیل live_jobs به HashMap با کلیدِ id
     // این‌ها اولویت بالاتری دارن (نسخه‌های زنده)
-    let live_map: HashMap<String, JobResponse> = get_status_log()
+    let live_map: HashMap<String, JobResponse> = ap
+        .status_manager
+        .get_status_log()
+        .await
         .statuses
         .iter()
         .map(|j| {
@@ -164,19 +204,15 @@ pub async fn jobs_list(
         .collect();
 
     // ۲. تبدیل jobs (مثلاً دیتابیس) به HashMap
-    let db_map: HashMap<String, JobResponse> = get_jobs(true)
-        .iter()
-        .map(|j| {
-            let resp = JobResponse::from(j);
-            (resp.id.clone(), resp)
-        })
-        .collect();
+    let mut db_map = HashMap::new();
+    for j in get_jobs(true) {
+        let resp = JobResponse::from_job_and_sm(&j, ap.status_manager.clone()).await;
+        db_map.insert(resp.id.clone(), resp);
+    }
 
     // ۳. شروع با لیست دیتابیس
     let mut merged = db_map;
 
-    // ۴. آپدیت کردن با live_jobs
-    // اگر id تکراری باشه، مقدار live_map جایگزین میشه (Overwrite)
     for (id, live_job) in live_map {
         merged.insert(id, live_job);
     }
@@ -220,11 +256,12 @@ pub async fn jobs_getbyid(
     Path(id): Path<String>,
 ) -> Result<Json<JobResponse>, StatusCode> {
     let ap = state.auto_pilot.read().await;
-    ap.jobs
-        .iter()
-        .find(|j| j.id == id)
-        .map(|job| Ok(Json(JobResponse::from(job))))
-        .unwrap_or(Err(StatusCode::NOT_FOUND))
+    if let Some(job) = ap.jobs.iter().find(|j| j.id == id) {
+        let resp = JobResponse::from_job_and_sm(job, ap.status_manager.clone()).await;
+        Ok(Json(resp))
+    } else {
+        Err(StatusCode::NOT_FOUND)
+    }
 }
 
 /// DELETE /jobs/{id} - Delete job by ID

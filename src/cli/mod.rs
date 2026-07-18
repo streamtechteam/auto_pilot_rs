@@ -77,13 +77,15 @@ pub async fn handle_cli() {
             status();
         }
         Some(Commands::Gui) => {
-            gui();
+            gui().expect("failed to launch gui due to :");
         }
-        
+
         None => {
             println!("No commands specified.");
             let mut cmd = <Cli as clap::CommandFactory>::command();
             cmd.print_help().unwrap();
+            println!("Launching GUI...");
+            gui().expect("failed to launch gui");
             return;
         }
     }

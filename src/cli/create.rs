@@ -71,6 +71,12 @@ fn create_interactive() -> Result<PathBuf, AutoPilotError> {
                 // Once
                 let date_input: String = Input::with_theme(&ColorfulTheme::default())
                     .with_prompt("Enter date (YYYY/MM/DD):")
+                    .default(
+                        chrono::Local::now()
+                            .date_naive()
+                            .format("%Y/%m/%d")
+                            .to_string(),
+                    )
                     .interact_text()
                     .map_err(|err| {
                         AutoPilotError::InvalidJob(format!("Failed to get date: {}", err))
@@ -262,7 +268,7 @@ fn create_interactive() -> Result<PathBuf, AutoPilotError> {
     }else {
         None
     };
-    
+
     add_job(
         Some(name),
         Some(description),

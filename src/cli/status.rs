@@ -1,3 +1,8 @@
+use std::io::{Read, Write};
+use std::net::TcpStream;
+
+use crate::api::handlers::{API_SERVICE_NAME, HealthResponse};
+use crate::api::routes::PORT;
 
 pub fn status() {
     match check_if_running() {
@@ -11,17 +16,30 @@ pub fn status() {
 }
 
 pub fn check_if_running() -> bool {
-    let pid_str = duct_sh::sh_dangerous("pgrep autopilot")
-        .read()
-        .expect("if you are seeing this, something is clearly wrong with your device!");
-    let pids: Vec<u32> = match pid_str.clone().parse::<u32>() {
-        Ok(pid) => {
-            vec![pid]
-        }
-        Err(_) => pid_str
-            .split_whitespace()
-            .map(|value| value.parse().expect("You shouldnt have seen this"))
-            .collect(),
+    let mut stream = match TcpStream::connect(format!("localhost:{}", PORT)) {
+        Ok(stream) => stream,
+        Err(_) => return false,
     };
-    pids.len() > 1
+
+    let request = format!(
+        "GET /health HTTP/1.1\r\nHost: localhost:{}\r\nConnection: close\r\n\r\n",
+        PORT
+    );
+
+    if stream.write_all(request.as_bytes()).is_err() {
+        return false;
+    }
+
+    let mut response = String::new();
+    if stream.read_to_string(&mut response).is_err() {
+        return false;
+    }
+
+    let body = match response.split("\r\n\r\n").nth(1) {
+        Some(b) => b.trim(),
+        None => return false,
+    };
+    let json_body = serde_json::from_str::<HealthResponse>(body).expect("Failed to parse response");
+
+    json_body.status == "ok" && json_body.service == API_SERVICE_NAME.to_string()
 }

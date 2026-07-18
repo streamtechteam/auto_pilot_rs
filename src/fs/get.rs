@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-
 use crate::fs::CONFIG_PATH;
 
 pub fn get_autopilot_path() -> String {
@@ -16,10 +15,6 @@ pub fn get_logs_path() -> String {
 
 pub fn get_config_path() -> String {
     get_autopilot_path() + "/autopilot.jsonc"
-}
-
-pub fn get_status_path() -> String {
-    get_autopilot_path() + "/status.jsonc"
 }
 
 pub fn get_jobs_path() -> String {

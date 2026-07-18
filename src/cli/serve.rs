@@ -7,7 +7,6 @@ use std::{
 use crate::{
     api::{routes::start_api, state::AppState},
     autopilot::AutoPilot,
-    status::set::set_status_initial,
 };
 use log::{error, info, warn};
 use tokio::{self, signal, sync::RwLock};
@@ -15,7 +14,7 @@ use tokio::{self, signal, sync::RwLock};
 pub async fn serve(verbose: bool, api: bool) {
     // let mut auto_pilot = AutoPilot::new().await;
     let auto_pilot = Arc::new(RwLock::new(AutoPilot::new().await));
-    match auto_pilot.write().await.init(verbose) {
+    match auto_pilot.write().await.init(verbose).await {
         Err(err) => {
             error!("Failed to initialize autopilot: {}", err);
             std::process::exit(1);
@@ -55,9 +54,6 @@ pub async fn serve(verbose: bool, api: bool) {
 
             sigterm.recv().await;
             info!("Received SIGTERM, resetting status...");
-            if let Err(e) = set_status_initial() {
-                error!("Failed to initialize status: {}", e);
-            }
             warn!("{}", crate::language::en_us::AUTOPILOT_SHUTDOWN);
             std::process::exit(0);
         });
@@ -75,9 +71,6 @@ pub async fn serve(verbose: bool, api: bool) {
 
             sighup.recv().await;
             info!("Received SIGHUP, resetting status...");
-            if let Err(e) = set_status_initial() {
-                error!("Failed to initialize status: {}", e);
-            }
             auto_pilot.write().await.reload().await;
             // std::process::exit(0);
             // serve().await;
@@ -88,10 +81,6 @@ pub async fn serve(verbose: bool, api: bool) {
             if let Err(e) = signal::ctrl_c().await {
                 error!("Failed to listen for ctrl+c: {}", e);
                 std::process::exit(1);
-            }
-            warn!("Received SIGINT, resetting status...");
-            if let Err(e) = set_status_initial() {
-                error!("Failed to initialize status: {}", e);
             }
             warn!("{}", crate::language::en_us::AUTOPILOT_SHUTDOWN);
             std::process::exit(0);

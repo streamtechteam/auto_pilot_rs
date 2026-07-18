@@ -4,10 +4,7 @@ use log::info;
 
 use crate::{
     error::{AutoPilotError, Result},
-    fs::{
-        CONFIG_PATH, get_autopilot_path, get_config_path, get_jobs_path, get_logs_path,
-        get_status_path,
-    },
+    fs::{CONFIG_PATH, get_autopilot_path, get_config_path, get_jobs_path, get_logs_path},
 };
 
 pub fn set_all_paths(quiet: bool) -> Result<()> {
@@ -15,7 +12,6 @@ pub fn set_all_paths(quiet: bool) -> Result<()> {
     set_logs_path()?;
     set_config_path(quiet)?;
     set_jobs_path()?;
-    set_status_path(quiet)?;
     Ok(())
 }
 
@@ -29,7 +25,7 @@ pub fn set_autopilot_path(config_path: Option<String>) -> Result<()> {
         } else if cfg!(target_os = "windows") {
             CONFIG_PATH
                 .set(format!(
-                    "{}/AppData/Roaming/auto-pilot",
+                    "{}\\AppData\\Roaming\\auto-pilot",
                     home_path.display()
                 ))
                 .expect("couldnt set CONFIG_PATH");
@@ -70,20 +66,20 @@ pub fn set_config_path(quiet: bool) -> Result<()> {
     Ok(())
 }
 
-pub fn set_status_path(quiet: bool) -> Result<()> {
-    let status: String = get_status_path();
-    let exists = fs::metadata(&status).is_ok();
-    if exists {
-        if !quiet {
-            info!("Status file already exist")
-        }
-    } else {
-        fs::write(&status, "{}").map_err(|e| {
-            AutoPilotError::DirectoryInit(format!("Failed to create status file: {}", e))
-        })?;
-    }
-    Ok(())
-}
+// pub fn set_status_path(quiet: bool) -> Result<()> {
+//     let status: String = get_status_path();
+//     let exists = fs::metadata(&status).is_ok();
+//     if exists {
+//         if !quiet {
+//             info!("Status file already exist")
+//         }
+//     } else {
+//         fs::write(&status, "{}").map_err(|e| {
+//             AutoPilotError::DirectoryInit(format!("Failed to create status file: {}", e))
+//         })?;
+//     }
+//     Ok(())
+// }
 
 pub fn set_jobs_path() -> Result<()> {
     let jobs_path: String = get_jobs_path();

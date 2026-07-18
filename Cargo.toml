@@ -32,6 +32,9 @@ axum = "0.8.8"
 egui = "0.33.3"
 eframe = "0.33.3"
 egui_extras = "0.33.3"
+once_cell = "1.21.4"
+regex = "1.12.3"
+walkdir = "2.5.0"
 
 # [target.'cfg(target_os = "linux")'.dependencies]
 # systemd = "0.10.1"

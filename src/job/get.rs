@@ -1,4 +1,9 @@
-use std::{fs, path::PathBuf};
+use std::{
+    collections::HashSet,
+    fs::{self},
+    path::{Path, PathBuf},
+    process::exit,
+};
 
 use colored::*;
 use log::{error, info};
@@ -7,12 +12,13 @@ use crate::{
     error::AutoPilotError,
     fs::get_jobs_path,
     job::{Job, JobScheme},
-    utilities::jsonc_parser::jsonc_parse,
+    utilities::{directory_search::search_directory, jsonc_parser::jsonc_parse},
 };
 
 pub fn get_jobs(quiet: bool) -> Vec<Job> {
     let mut jobs_string: Vec<String> = vec![];
     let mut job_objects: Vec<Job> = vec![];
+    let mut jobs_ids: Vec<String> = vec![];
     let jobs_path = get_jobs_paths();
     for job in &jobs_path {
         match fs::read_to_string(job) {
@@ -33,9 +39,12 @@ pub fn get_jobs(quiet: bool) -> Vec<Job> {
         match serde_json::from_str::<JobScheme>(jsonc_parse(job_str).as_str()) {
             Ok(job_scheme) => {
                 let job_object = Job::from_scheme(job_scheme);
+                let id = job_object.id.clone();
                 if !quiet {
                     info!("Loaded job: {}", job_object.name);
                 }
+                jobs_ids.push(id);
+
                 job_objects.push(job_object);
             }
             Err(e) => {
@@ -54,7 +63,46 @@ pub fn get_jobs(quiet: bool) -> Vec<Job> {
             }
         }
     }
+
+    // for (index, id) in jobs_ids.iter().enumerate() {
+    //     for _id in jobs_ids.iter().skip(index + 1) {
+    //         if _id == id {
+    //             error!("Error ! {}")
+    //         }
+    //     }
+    // }
+
+    log_all_duplicates(jobs_ids);
     job_objects
+}
+
+fn log_all_duplicates(jobs_ids: Vec<String>) {
+    let mut seen = HashSet::new();
+    let mut dupes = HashSet::new();
+
+    for id in jobs_ids.clone() {
+        if !seen.insert(id.clone()) {
+            // id was already seen → it’s a duplicate
+            if dupes.insert(id.clone()) {
+                // first time we notice this specific duplicate
+                eprintln!(
+                    "{} {}",
+                    "[WARNING] Duplicate job id found: ".yellow(),
+                    id.red()
+                );
+                search_directory(Path::new(get_jobs_path().as_str()), &id).unwrap()
+            }
+        }
+    }
+
+    if !dupes.is_empty() {
+        eprintln!(
+            "{}",
+            "[CRITICAL] Duplicates should be resolved before running autopilot".red()
+        );
+
+        exit(1);
+    }
 }
 
 pub fn get_jobs_paths() -> Vec<PathBuf> {
