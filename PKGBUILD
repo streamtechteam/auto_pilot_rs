@@ -1,6 +1,6 @@
 # Maintainer: Taha Moosavi <taha.moosavi.taha@gmail.com>
 pkgname=autopilot-rs
-pkgver=0.1.0-beta
+pkgver=0.1.0.beta
 pkgrel=1
 pkgdesc="AutoPilot-rs runs automation jobs based on conditions like WiFi, Bluetooth, battery, CPU usage, and more."
 arch=('x86_64')
