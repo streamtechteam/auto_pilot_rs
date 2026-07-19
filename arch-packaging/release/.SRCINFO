@@ -1,6 +1,6 @@
 pkgbase = autopilot-rs
 	pkgdesc = AutoPilot-rs runs automation jobs based on conditions like WiFi, Bluetooth, battery, CPU usage, and more.
-	pkgver = 0.1.0.beta
+	pkgver = 0.1.0-beta
 	pkgrel = 1
 	url = https://github.com/streamtechteam/autopilot-rs
 	arch = x86_64
@@ -19,7 +19,7 @@ pkgbase = autopilot-rs
 	depends = libxau
 	provides = autopilot-rs
 	conflicts = autopilot-rs
-	source = autopilot-rs-0.1.0.beta.tar.gz::https://github.com/streamtechteam/auto_pilot_rs/archive/refs/tags/v0.1.0.beta.tar.gz
+	source = autopilot-rs-0.1.0.beta.tar.gz::https://github.com/streamtechteam/autopilot-rs/archive/refs/tags/v0.1.0.beta.tar.gz
 	sha256sums = SKIP
 
 pkgname = autopilot-rs

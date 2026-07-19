@@ -1,6 +1,6 @@
 pkgbase = autopilot-rs-git
 	pkgdesc = AutoPilot-rs runs automation jobs based on conditions like WiFi, Bluetooth, battery, CPU usage, and more.
-	pkgver = 0.1.0.beta
+	pkgver = git
 	pkgrel = 1
 	url = https://github.com/streamtechteam/auto_pilot_rs
 	arch = x86_64
