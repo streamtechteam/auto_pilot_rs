@@ -1,6 +1,6 @@
 [package]
 name = "autopilot-rs"
-version = "0.1.0-beta"
+version = "0.1.0-beta.1"
 edition = "2024"
 description = "A cross-platform automation tool that runs tasks when conditions are met"
 license = "MIT"
