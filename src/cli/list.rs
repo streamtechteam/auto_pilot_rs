@@ -22,8 +22,6 @@ pub fn list() {
 pub fn list_interactive() -> Result<(), AutoPilotError> {
     execute!(stdout(), terminal::Clear(terminal::ClearType::All))?;
     loop {
-        // set_status_initial().expect("failed to reset status");
-        // let status_log = get_status_log();
         let jobs = get_jobs(true);
 
         let formated_jobs: Vec<String> = get_jobs(true)

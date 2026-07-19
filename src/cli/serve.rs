@@ -98,9 +98,6 @@ pub async fn serve(verbose: bool, api: bool) {
             std::process::exit(1);
         }
         warn!("{}", crate::language::en_us::AUTOPILOT_SHUTDOWN);
-        if let Err(e) = set_status_initial() {
-            error!("Failed to initialize status: {}", e);
-        }
         std::process::exit(0);
     }
 }

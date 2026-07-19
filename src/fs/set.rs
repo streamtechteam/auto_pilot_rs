@@ -66,18 +66,6 @@ pub fn set_config_path(quiet: bool) -> Result<()> {
     Ok(())
 }
 
-// pub fn set_status_path(quiet: bool) -> Result<()> {
-//     let status: String = get_status_path();
-//     let exists = fs::metadata(&status).is_ok();
-//     if exists {
-//         if !quiet {
-//             info!("Status file already exist")
-//         }
-//     } else {
-//         fs::write(&status, "{}").map_err(|e| {
-//             AutoPilotError::DirectoryInit(format!("Failed to create status file: {}", e))
-//         })?;
-//     }
 //     Ok(())
 // }
 

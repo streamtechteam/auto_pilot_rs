@@ -96,9 +96,6 @@ impl Job {
             info!("{} : {}", "Running job".yellow(), self.name);
         }
         // self.status = JobStatusEnum::Running;
-        // if let Err(e) = set_state_item(self.id.clone(), JobStatusEnum::Running) {
-        //     error!("Failed to set state item: {}", e);
-        // }
 
         state_manager
             .set(self.id.clone(), None, JobStatusEnum::Running)
@@ -114,10 +111,6 @@ impl Job {
         //         if result {
         //             run_tasks(self.tasks.clone()).await;
         //             self.status = JobStatusEnum::Completed;
-        //             // dbg!(self.status.clone());
-        //             if let Err(e) = set_state_item(self.id.clone(), JobStatusEnum::Completed) {
-        //                 error!("Failed to set state item: {}", e);
-        //             }
         //             if !quiet {
         //                 info!("{} : {}", "Job Completed".green(), self.name);
         //             }
